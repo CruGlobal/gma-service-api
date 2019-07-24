@@ -1,0 +1,144 @@
+service: gma-service-api
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: production
+  region: us-east-1
+  environment: ${file(serverless/environment.js)}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - SQS:ReceiveMessage
+        - SQS:SendMessage
+        - SQS:SendMessageBatch
+      Resource:
+        Fn::GetAtt: [ GMAServerQueryQueue, Arn ]
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - Fn::GetAtt: [ GMAServersDynamoDbTable, Arn ]
+  $<<: ${file(serverless/provider.js)}
+
+functions:
+  query-server:
+    handler: handlers/query-server.handler
+    timeout: 30
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [GMAServerQueryQueue, Arn]
+          batchSize: 1
+    environment:
+      DYNAMODB_TABLE_NAME: ${cf:gma-service-api-production.DynamDbTableName}
+
+  enqueue-servers:
+    handler: handlers/enqueue-servers.handler
+    timeout: 30
+    events:
+      - schedule: rate(12 hours)
+    environment:
+      DYNAMODB_TABLE_NAME: ${cf:gma-service-api-production.DynamDbTableName}
+      SQS_QUEUE_URL: ${cf:gma-service-api-production.SQSQueueURL}
+
+  api:
+    handler: handlers/api.handler
+    # GET /auth/service
+    # POST /auth/login
+    # DELETE /auth/session/{sessionId:[0-9a-f]+}
+    # GET /{sessionId:(?:[0-9a-f]+/)?}/servers
+    events:
+      - http:
+          method: GET
+          path: gma/auth/service
+      - http:
+          method: POST
+          path: gma/auth/login
+      - http:
+          method: DELETE
+          path: 'gma/auth/session'
+      - http:
+          method: DELETE
+          path: 'gma/auth/session/{sessionId}'
+          request:
+            parameters:
+              paths:
+                sessionId: true
+      - http:
+          method: GET
+          path: gma/servers
+      - http:
+          method: GET
+          path: 'gma/{sessionId}/servers'
+          request:
+            parameters:
+              paths:
+                sessionId: true
+
+package:
+  exclude:
+    - .git/**
+    - test/**
+    - '**/*.test.js'
+    - '**/*.sql'
+    - .deployment/**
+
+plugins:
+  - '@cruglobal/serverless-merge-config'
+  - serverless-webpack
+  - serverless-offline
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+    packager: yarn
+
+resources:
+  Resources:
+    IamRoleLambdaExecution:
+      Properties:
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaENIManagementAccess
+
+    GMAServerDeadLetterQueue:
+      Type: AWS::SQS::Queue
+
+    GMAServerQueryQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        # See https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-queueconfig
+        MessageRetentionPeriod: 604800
+        VisibilityTimeout: 360
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt: [ GMAServerDeadLetterQueue, Arn ]
+          maxReceiveCount: 5
+
+    GMAServersDynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: ServerURL
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: ServerURL
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+  Outputs:
+    DynamDbTableName:
+      Value:
+        Ref: GMAServersDynamoDbTable
+    SQSQueueURL:
+      Value:
+        Ref: GMAServerQueryQueue
