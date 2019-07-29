@@ -49,6 +49,8 @@ functions:
 
   api:
     handler: handlers/api.handler
+    environment:
+      DYNAMODB_TABLE_NAME: ${cf:gma-service-api-production.DynamDbTableName}
     # GET /auth/service
     # POST /auth/login
     # DELETE /auth/session/{sessionId:[0-9a-f]+}
