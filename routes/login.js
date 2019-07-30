@@ -13,8 +13,13 @@ const loginRoute = async (context) => {
   try {
     const guid = await casClient.serviceValidate(process.env['GMA_SERVICE_API_URL'], ticket)
     const accessToken = await AccessToken.generate(guid)
-    context.type = 'application/json'
-    context.body = JSON.stringify({ id: accessToken, guid })
+    if (context.request.header['accept'] === 'text/plain') {
+      context.type = 'text/plain'
+      context.body = accessToken
+    } else {
+      context.type = 'application/json'
+      context.body = JSON.stringify({ id: accessToken, guid })
+    }
   } catch (error) {
     context.throw(401)
   }
