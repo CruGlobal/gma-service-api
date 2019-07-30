@@ -77,7 +77,17 @@ functions:
           path: gma/servers
       - http:
           method: GET
+          path: gma/servers.json
+      - http:
+          method: GET
           path: 'gma/{sessionId}/servers'
+          request:
+            parameters:
+              paths:
+                sessionId: true
+      - http:
+          method: GET
+          path: 'gma/{sessionId}/servers.json'
           request:
             parameters:
               paths:

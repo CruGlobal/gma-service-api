@@ -10,7 +10,9 @@ export const routerMiddleware = createRouter({
   GET: {
     '/gma/auth/service': serviceRoute,
     '/gma/servers': serversRoute,
-    '/gma/:accessToken?/servers': serversRoute
+    '/gma/servers.json': serversRoute,
+    '/gma/:accessToken?/servers': serversRoute,
+    '/gma/:accessToken?/servers.json': serversRoute
   },
   POST: {
     '/gma/auth/login': loginRoute
