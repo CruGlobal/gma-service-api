@@ -4,6 +4,7 @@ import ServerlessHttp from 'serverless-http'
 import Koa from 'koa'
 import bodyParserMiddleware from 'koa-better-body'
 import routerMiddleware from '../routes'
+import { forEach, get } from 'lodash'
 
 const app = new Koa()
 
@@ -30,6 +31,11 @@ app.use(routerMiddleware)
 
 const serverlessHandler = ServerlessHttp(app)
 export const handler = async (lambdaEvent, context) => {
+  if (get(lambdaEvent, 'requestContext.elb')) {
+    forEach(lambdaEvent.queryStringParameters, (value, key) => {
+      lambdaEvent.queryStringParameters[key] = decodeURIComponent(value)
+    })
+  }
   const result = await serverlessHandler(lambdaEvent, context)
   return result
 }

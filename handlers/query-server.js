@@ -23,7 +23,7 @@ export const handler = async (lambdaEvent) => {
     const gmaClient = new GmaClient(server.ServerURL)
 
     // Request service url and Use OAuth password grant to get token, scope=fullticket
-    const [serviceUrl, ...rest] = await Promise.all([
+    const [serviceUrl] = await Promise.all([
       gmaClient.getServiceUrl(),
       casClient.authenticate(server.User, server.Password)
     ])

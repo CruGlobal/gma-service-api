@@ -15,16 +15,21 @@
   },
   "scripts": {
     "lint": "standard --fix --verbose || exit 0",
-    "test": "jest --detectOpenHandles --coverage"
+    "test": "jest --detectOpenHandles --coverage",
+    "serverless": "serverless"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.15",
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
     "@cruglobal/serverless-merge-config": "^1.1.0",
+    "@types/jest": "^24.0.15",
     "aws-sdk": "^2.470.0",
+    "babel-jest": "^24.9.0",
+    "babel-plugin-source-map-support": "^2.1.1",
+    "csv-parse": "^4.6.5",
     "dotenv": "^8.0.0",
     "jest": "^24.8.0",
     "serverless": "^1.44.1",
-    "serverless-offline": "^5.1.1",
     "serverless-webpack": "^5.3.1",
     "standard": "^12.0.1",
     "webpack": "^4.2.0",
@@ -40,6 +45,7 @@
     "redis": "^2.8.0",
     "rollbar": "^2.8.1",
     "serverless-http": "^2.0.2",
+    "source-map-support": "^0.5.13",
     "tough-cookie": "^3.0.1",
     "uuid4": "^1.1.4"
   },

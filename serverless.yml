@@ -27,7 +27,7 @@ provider:
   $<<: ${file(serverless/provider.js)}
 
 functions:
-  query-server:
+  queryServer:
     handler: handlers/query-server.handler
     timeout: 30
     events:
@@ -38,7 +38,7 @@ functions:
     environment:
       DYNAMODB_TABLE_NAME: ${cf:gma-service-api-production.DynamDbTableName}
 
-  enqueue-servers:
+  enqueueServers:
     handler: handlers/enqueue-servers.handler
     timeout: 30
     events:
@@ -47,51 +47,21 @@ functions:
       DYNAMODB_TABLE_NAME: ${cf:gma-service-api-production.DynamDbTableName}
       SQS_QUEUE_URL: ${cf:gma-service-api-production.SQSQueueURL}
 
+  # GET /auth/service
+  # POST /auth/login
+  # DELETE /auth/session/{sessionId:[0-9a-f]+}
+  # GET /{sessionId:(?:[0-9a-f]+/)?}/servers
   api:
     handler: handlers/api.handler
     environment:
       DYNAMODB_TABLE_NAME: ${cf:gma-service-api-production.DynamDbTableName}
-    # GET /auth/service
-    # POST /auth/login
-    # DELETE /auth/session/{sessionId:[0-9a-f]+}
-    # GET /{sessionId:(?:[0-9a-f]+/)?}/servers
     events:
-      - http:
-          method: GET
-          path: gma/auth/service
-      - http:
-          method: POST
-          path: gma/auth/login
-      - http:
-          method: DELETE
-          path: 'gma/auth/session'
-      - http:
-          method: DELETE
-          path: 'gma/auth/session/{sessionId}'
-          request:
-            parameters:
-              paths:
-                sessionId: true
-      - http:
-          method: GET
-          path: gma/servers
-      - http:
-          method: GET
-          path: gma/servers.json
-      - http:
-          method: GET
-          path: 'gma/{sessionId}/servers'
-          request:
-            parameters:
-              paths:
-                sessionId: true
-      - http:
-          method: GET
-          path: 'gma/{sessionId}/servers.json'
-          request:
-            parameters:
-              paths:
-                sessionId: true
+      - alb:
+          listenerArn:
+            Ref: APILoadBalancerListener
+          priority: 1
+          conditions:
+            path: /gma
 
 package:
   exclude:
@@ -104,7 +74,6 @@ package:
 plugins:
   - '@cruglobal/serverless-merge-config'
   - serverless-webpack
-  - serverless-offline
 
 custom:
   webpack:
@@ -146,6 +115,34 @@ resources:
             AttributeName: ServerURL
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+
+    APILoadBalancer:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Name: gma-service-api-production-alb
+        Type: application
+        Scheme: internet-facing
+        IpAddressType: ipv4
+        SecurityGroups:
+          - ${file(${env:ECS_CONFIG}/bin/vars.yml):us-east-1.webapp_elb_sg}
+        Subnets: ${file(${env:ECS_CONFIG}/bin/vars.yml):us-east-1.prod_public_1_all}
+
+    APILoadBalancerListener:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        LoadBalancerArn:
+          Ref: APILoadBalancer
+        Certificates:
+          - CertificateArn: arn:aws:acm:us-east-1:056154071827:certificate/e9dd9bfe-2db3-4313-817c-cfb67c4d95d7
+        DefaultActions:
+          - Type: fixed-response
+            Order: 1
+            FixedResponseConfig:
+              StatusCode: 404
+              ContentType: application/json
+              MessageBody: '{"error": "Not Found"}'
+        Port: 443
+        Protocol: HTTPS
 
   Outputs:
     DynamDbTableName:
