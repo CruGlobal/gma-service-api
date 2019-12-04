@@ -3,9 +3,19 @@ service: gma-service-api
 provider:
   name: aws
   runtime: nodejs10.x
-  stage: production
+  stage: ${env:ENVIRONMENT}
   region: us-east-1
-  environment: ${file(serverless/environment.js)}
+  vpc:
+    securityGroupIds:
+      - ${file(${env:ECS_CONFIG}/bin/vars.yml):us-east-1.webapp_elb_sg}
+    subnetIds: ${file(${env:ECS_CONFIG}/bin/vars.yml):us-east-1.prod_apps_1_all}
+  stackTags:
+    Name: ${env:PROJECT_NAME}-${self:custom.environmentMap.${env:ENVIRONMENT}}
+    owner: apps@cru.org
+    application: ${env:PROJECT_NAME}
+    env: ${self:custom.environmentMap.${env:ENVIRONMENT}}
+    managed_by: serverless-framework
+    function: lambda
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -24,7 +34,7 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         - Fn::GetAtt: [ GMAServersDynamoDbTable, Arn ]
-  $<<: ${file(serverless/provider.js)}
+  environment: ${file(serverless/environment.js)}
 
 functions:
   queryServer:
@@ -64,6 +74,7 @@ functions:
             path: /gma
 
 package:
+  individually: true
   exclude:
     - .git/**
     - test/**
@@ -80,6 +91,12 @@ custom:
     webpackConfig: ./webpack.config.js
     includeModules: true
     packager: yarn
+    excludeFiles: '**/*.test.js'
+  environmentMap:
+    production: prod
+    staging: stage
+    development: dev
+    lab: lab
 
 resources:
   Resources:

@@ -46,7 +46,7 @@ export const handler = async (lambdaEvent) => {
       ExpressionAttributeValues: { ':guids': guids }
     }).promise()
   } catch (error) {
-    rollbar.error('query-server error', error)
-    return Promise.reject(error)
+    await rollbar.error('query-server error', error)
+    throw error
   }
 }

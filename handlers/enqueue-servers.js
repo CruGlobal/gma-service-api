@@ -33,7 +33,7 @@ export const handler = async (lambdaEvent) => {
       Entries: entries
     }).promise()))
   } catch (error) {
-    rollbar.error('enqueue-servers error', error)
-    return Promise.reject(error)
+    await rollbar.error('enqueue-servers error', error)
+    throw error
   }
 }
