@@ -37,7 +37,7 @@
     "webpack-node-externals": "^1.6.0"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "axios-cookiejar-support": "^0.5.0",
     "koa": "^2.7.0",
     "koa-bestest-router": "^1.0.2",
