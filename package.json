@@ -43,7 +43,7 @@
     "koa-bestest-router": "^1.0.2",
     "koa-better-body": "^3.0.4",
     "lodash": "^4.17.14",
-    "redis": "^2.8.0",
+    "redis": "^3.1.1",
     "rollbar": "^2.8.1",
     "serverless-http": "^2.0.2",
     "source-map-support": "^0.5.13",
