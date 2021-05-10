@@ -42,7 +42,7 @@
     "koa": "^2.7.0",
     "koa-bestest-router": "^1.0.2",
     "koa-better-body": "^3.0.4",
-    "lodash": "^4.17.14",
+    "lodash": "^4.17.21",
     "redis": "^2.8.0",
     "rollbar": "^2.8.1",
     "serverless-http": "^2.0.2",
